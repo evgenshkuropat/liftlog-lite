@@ -1,0 +1,15 @@
+com\example\liftloglite\dto\CreateWorkoutRq.class
+com\example\liftloglite\dto\AddSetRq.class
+com\example\liftloglite\exercise\ExerciseController.class
+com\example\liftloglite\LiftlogLiteApplication.class
+com\example\liftloglite\workout\WorkoutController.class
+com\example\liftloglite\common\GlobalExceptionHandler.class
+com\example\liftloglite\workout\WorkoutRepository.class
+com\example\liftloglite\common\ApiError.class
+com\example\liftloglite\exercise\ExerciseRepository.class
+com\example\liftloglite\exercise\Exercise.class
+com\example\liftloglite\workout\Workout.class
+com\example\liftloglite\workout\WorkoutService.class
+com\example\liftloglite\exercise\ExerciseService.class
+com\example\liftloglite\workout\model\SetEntry.class
+com\example\liftloglite\dto\CreateExerciseRq.class
