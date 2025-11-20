@@ -1,42 +1,99 @@
 package com.example.liftloglite.workout;
 
-import com.example.liftloglite.dto.AddSetRq;
-import com.example.liftloglite.dto.CreateWorkoutRq;
-import com.example.liftloglite.exercise.ExerciseRepository;
-import com.example.liftloglite.workout.model.SetEntry;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class WorkoutService {
-    private final WorkoutRepository repo;
-    private final ExerciseRepository exerciseRepo;
 
-    public WorkoutService(WorkoutRepository repo, ExerciseRepository exerciseRepo) {
-        this.repo = repo;
-        this.exerciseRepo = exerciseRepo;
+    private final WorkoutJpaRepository workoutRepo;
+    private final WorkoutSetJpaRepository setRepo;
+
+    public WorkoutService(WorkoutJpaRepository workoutRepo,
+                          WorkoutSetJpaRepository setRepo) {
+        this.workoutRepo = workoutRepo;
+        this.setRepo = setRepo;
     }
 
-    public Workout create(CreateWorkoutRq rq) {
-        var w = new Workout(java.util.UUID.randomUUID(), rq.startedAt());
-        return repo.save(w);
+    @Transactional
+    public Workout createWorkout(Instant startedAt) {
+        UUID id = UUID.randomUUID();
+        WorkoutEntity entity = new WorkoutEntity(id, startedAt, null);
+        WorkoutEntity saved = workoutRepo.save(entity);
+        return toDomain(saved);
     }
 
-    public Workout addSet(AddSetRq rq) {
-        var w = repo.findById(rq.workoutId())
-                .orElseThrow(() -> new java.util.NoSuchElementException("Workout not found"));
-        var ex = exerciseRepo.findById(rq.exerciseId())
-                .orElseThrow(() -> new java.util.NoSuchElementException("Exercise not found"));
-        int next = nextSetNo(w, ex.getId());
-        w.addSet(ex.getId(), new SetEntry(next, rq.weightKg(), rq.reps()));
-        return w;
+    @Transactional(readOnly = true)
+    public List<Workout> findAll() {
+        return workoutRepo.findAll()
+                .stream()
+                .map(this::toDomain)
+                .toList();
     }
 
-    private int nextSetNo(Workout w, java.util.UUID exId) {
-        var list = w.getSetsByExercise().getOrDefault(exId, java.util.List.of());
-        return list.size() + 1;
+    @Transactional
+    public Workout addSetToWorkout(AddSetRequest req) {
+        WorkoutEntity workout = workoutRepo.findById(req.getWorkoutId())
+                .orElseThrow(() -> new IllegalArgumentException("Workout not found: " + req.getWorkoutId()));
+
+        int nextSetNo = workout.getSets().stream()
+                .filter(s -> s.getExerciseId().equals(req.getExerciseId()))
+                .mapToInt(WorkoutSetEntity::getSetNo)
+                .max()
+                .orElse(0) + 1;
+
+        WorkoutSetEntity setEntity = new WorkoutSetEntity(
+                req.getExerciseId(),
+                nextSetNo,
+                req.getWeightKg(),
+                req.getReps()
+        );
+        workout.addSet(setEntity);
+
+        WorkoutEntity saved = workoutRepo.save(workout);
+        return toDomain(saved);
     }
 
-    public List<Workout> list() { return repo.findAll(); }
+    @Transactional
+    public void deleteWorkout(UUID id) {
+        if (!workoutRepo.existsById(id)) {
+            throw new IllegalArgumentException("Workout not found: " + id);
+        }
+        workoutRepo.deleteById(id);
+    }
+
+    @Transactional
+    public Workout finishWorkout(UUID id, Instant finishedAt) {
+        WorkoutEntity workout = workoutRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Workout not found: " + id));
+
+        workout.setFinishedAt(finishedAt);
+        WorkoutEntity saved = workoutRepo.save(workout);
+        return toDomain(saved);
+    }
+
+    // === mapping ===
+
+    private Workout toDomain(WorkoutEntity entity) {
+        var grouped = entity.getSets().stream()
+                .collect(Collectors.groupingBy(
+                        WorkoutSetEntity::getExerciseId,
+                        Collectors.mapping(
+                                s -> new WorkoutSet(s.getSetNo(), s.getWeightKg(), s.getReps()),
+                                Collectors.toList()
+                        )
+                ));
+
+        return new Workout(
+                entity.getId(),
+                entity.getStartedAt(),
+                entity.getFinishedAt(),
+                grouped
+        );
+    }
 }

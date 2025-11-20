@@ -1,28 +1,43 @@
 package com.example.liftloglite.workout;
 
-import com.example.liftloglite.workout.model.SetEntry;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Workout {
-    private final java.util.UUID id;
-    private final Instant startedAt;
-    private Instant finishedAt;
-    private final Map<java.util.UUID, java.util.List<SetEntry>> setsByExercise = new LinkedHashMap<>();
 
-    public Workout(java.util.UUID id, Instant startedAt) {
+    private final UUID id;
+    private final Instant startedAt;
+    private final Instant finishedAt;
+    private final Map<UUID, List<WorkoutSet>> setsByExercise;
+
+    public Workout(UUID id,
+                   Instant startedAt,
+                   Instant finishedAt,
+                   Map<UUID, List<WorkoutSet>> setsByExercise) {
         this.id = id;
         this.startedAt = startedAt;
+        this.finishedAt = finishedAt;
+        this.setsByExercise = setsByExercise;
     }
 
-    public void addSet(java.util.UUID exerciseId, SetEntry s) {
-        setsByExercise.computeIfAbsent(exerciseId, k -> new ArrayList<>()).add(s);
+    public UUID getId() {
+        return id;
     }
 
-    public java.util.UUID getId() { return id; }
-    public Instant getStartedAt() { return startedAt; }
-    public Instant getFinishedAt() { return finishedAt; }
-    public void finish(Instant finishedAt) { this.finishedAt = finishedAt; }
-    public Map<java.util.UUID, java.util.List<SetEntry>> getSetsByExercise() { return setsByExercise; }
+    public Instant getStartedAt() {
+        return startedAt;
+    }
+
+    public Instant getFinishedAt() {
+        return finishedAt;
+    }
+
+    public Map<UUID, List<WorkoutSet>> getSetsByExercise() {
+        return setsByExercise;
+    }
 }

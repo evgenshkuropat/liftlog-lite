@@ -2,14 +2,43 @@ package com.example.liftloglite.exercise;
 
 import org.springframework.stereotype.Repository;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class ExerciseRepository {
-    private final Map<java.util.UUID, Exercise> storage = new ConcurrentHashMap<>();
 
-    public Exercise save(Exercise e) { storage.put(e.getId(), e); return e; }
-    public Optional<Exercise> findById(java.util.UUID id) { return Optional.ofNullable(storage.get(id)); }
-    public List<Exercise> findAll() { return storage.values().stream().toList(); }
+    private final ExerciseJpaRepository jpaRepo;
+
+    public ExerciseRepository(ExerciseJpaRepository jpaRepo) {
+        this.jpaRepo = jpaRepo;
+    }
+
+    public Exercise save(Exercise e) {
+        ExerciseEntity entity = toEntity(e);
+        ExerciseEntity saved = jpaRepo.save(entity);
+        return toDomain(saved);
+    }
+
+    public Optional<Exercise> findById(UUID id) {
+        return jpaRepo.findById(id).map(this::toDomain);
+    }
+
+    public List<Exercise> findAll() {
+        return jpaRepo.findAll()
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    // === mapping ===
+
+    private ExerciseEntity toEntity(Exercise e) {
+        return new ExerciseEntity(e.getId(), e.getName(), e.getMuscle(), e.getEquipment());
+    }
+
+    private Exercise toDomain(ExerciseEntity entity) {
+        return new Exercise(entity.getId(), entity.getName(), entity.getMuscle(), entity.getEquipment());
+    }
 }
