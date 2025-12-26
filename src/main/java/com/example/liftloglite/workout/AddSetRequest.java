@@ -1,46 +1,19 @@
-package com.example.liftloglite.workout;
+package com.example.liftloglite.workout.dto;
 
-import java.util.UUID;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
 public class AddSetRequest {
 
-    private UUID workoutId;
-    private UUID exerciseId;
-    private double weightKg;
+    @NotBlank
+    private String exerciseName;
+
+    @Min(1)
     private int reps;
 
-    public AddSetRequest() {
-    }
+    @Positive
+    private double weight;
 
-    public UUID getWorkoutId() {
-        return workoutId;
-    }
-
-    public void setWorkoutId(UUID workoutId) {
-        this.workoutId = workoutId;
-    }
-
-    public UUID getExerciseId() {
-        return exerciseId;
-    }
-
-    public void setExerciseId(UUID exerciseId) {
-        this.exerciseId = exerciseId;
-    }
-
-    public double getWeightKg() {
-        return weightKg;
-    }
-
-    public void setWeightKg(double weightKg) {
-        this.weightKg = weightKg;
-    }
-
-    public int getReps() {
-        return reps;
-    }
-
-    public void setReps(int reps) {
-        this.reps = reps;
-    }
+    // getters/setters
 }
