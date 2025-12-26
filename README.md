@@ -38,4 +38,28 @@ The main goal of the project is to practice backend development concepts such as
 
 ---
 
-## 📦 Ex
+## 📦 Example functionality
+- Create and manage workouts
+- Add exercises to workouts
+- Retrieve workout data
+- Update and delete records
+- Work with relational data
+
+---
+
+## 🎯 Purpose
+This project was created as a learning backend application to:
+- practice Spring Boot development
+- understand REST API design
+- work with relational databases
+- improve backend architecture skills
+- prepare for real-world backend tasks
+
+---
+
+## ▶️ How to run
+1. Clone the repository
+2. Configure database connection in `application.properties`
+3. Run the application:
+   ```bash
+   mvn spring-boot:run
