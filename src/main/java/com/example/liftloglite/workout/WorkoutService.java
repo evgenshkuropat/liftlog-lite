@@ -1,5 +1,9 @@
 package com.example.liftloglite.workout;
 
+import com.example.liftloglite.common.exception.NotFoundException;
+import com.example.liftloglite.workout.dto.AddSetRequest;
+import com.example.liftloglite.workout.dto.CreateWorkoutRequest;
+import com.example.liftloglite.workout.dto.WorkoutResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,34 +16,32 @@ import java.util.stream.Collectors;
 public class WorkoutService {
 
     private final WorkoutJpaRepository workoutRepo;
-    private final WorkoutSetJpaRepository setRepo;
 
-    public WorkoutService(WorkoutJpaRepository workoutRepo,
-                          WorkoutSetJpaRepository setRepo) {
+    public WorkoutService(WorkoutJpaRepository workoutRepo) {
         this.workoutRepo = workoutRepo;
-        this.setRepo = setRepo;
     }
 
     @Transactional
-    public Workout createWorkout(Instant startedAt) {
+    public WorkoutResponse createWorkout(CreateWorkoutRequest request) {
         UUID id = UUID.randomUUID();
-        WorkoutEntity entity = new WorkoutEntity(id, startedAt, null);
+        WorkoutEntity entity = new WorkoutEntity(id, request.getStartedAt(), null);
         WorkoutEntity saved = workoutRepo.save(entity);
-        return toDomain(saved);
+        return WorkoutMapper.toResponse(toDomain(saved));
     }
 
     @Transactional(readOnly = true)
-    public List<Workout> findAll() {
+    public List<WorkoutResponse> findAll() {
         return workoutRepo.findAll()
                 .stream()
                 .map(this::toDomain)
+                .map(WorkoutMapper::toResponse)
                 .toList();
     }
 
     @Transactional
-    public Workout addSetToWorkout(AddSetRequest req) {
-        WorkoutEntity workout = workoutRepo.findById(req.getWorkoutId())
-                .orElseThrow(() -> new IllegalArgumentException("Workout not found: " + req.getWorkoutId()));
+    public WorkoutResponse addSetToWorkout(UUID workoutId, AddSetRequest req) {
+        WorkoutEntity workout = workoutRepo.findById(workoutId)
+                .orElseThrow(() -> new NotFoundException("Workout not found: " + workoutId));
 
         int nextSetNo = workout.getSets().stream()
                 .filter(s -> s.getExerciseId().equals(req.getExerciseId()))
@@ -56,29 +58,28 @@ public class WorkoutService {
         workout.addSet(setEntity);
 
         WorkoutEntity saved = workoutRepo.save(workout);
-        return toDomain(saved);
+        return WorkoutMapper.toResponse(toDomain(saved));
     }
 
     @Transactional
     public void deleteWorkout(UUID id) {
         if (!workoutRepo.existsById(id)) {
-            throw new IllegalArgumentException("Workout not found: " + id);
+            throw new NotFoundException("Workout not found: " + id);
         }
         workoutRepo.deleteById(id);
     }
 
     @Transactional
-    public Workout finishWorkout(UUID id, Instant finishedAt) {
+    public WorkoutResponse finishWorkout(UUID id) {
         WorkoutEntity workout = workoutRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Workout not found: " + id));
+                .orElseThrow(() -> new NotFoundException("Workout not found: " + id));
 
-        workout.setFinishedAt(finishedAt);
+        workout.setFinishedAt(Instant.now());
         WorkoutEntity saved = workoutRepo.save(workout);
-        return toDomain(saved);
+        return WorkoutMapper.toResponse(toDomain(saved));
     }
 
     // === mapping ===
-
     private Workout toDomain(WorkoutEntity entity) {
         var grouped = entity.getSets().stream()
                 .collect(Collectors.groupingBy(
