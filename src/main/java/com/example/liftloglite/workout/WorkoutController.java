@@ -33,18 +33,18 @@ public class WorkoutController {
 
     @PostMapping("/{id}/sets")
     @ResponseStatus(HttpStatus.CREATED)
-    public WorkoutResponse addSet(@PathVariable UUID id, @Valid @RequestBody AddSetRequest request) {
-        return service.addSetToWorkout(id, request);
+    public WorkoutResponse addSet(@PathVariable("id") UUID workoutId, @Valid @RequestBody AddSetRequest request) {
+        return service.addSetToWorkout(workoutId, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteWorkout(@PathVariable UUID id) {
-        service.deleteWorkout(id);
+    public void deleteWorkout(@PathVariable("id") UUID workoutId) {
+        service.deleteWorkout(workoutId);
     }
 
     @PostMapping("/{id}/finish")
-    public WorkoutResponse finishWorkout(@PathVariable UUID id) {
-        return service.finishWorkout(id); // сервис сам ставит now()
+    public WorkoutResponse finishWorkout(@PathVariable("id") UUID workoutId) {
+        return service.finishWorkout(workoutId);
     }
 }
