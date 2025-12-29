@@ -3,9 +3,10 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5434/liftlog
+    url: jdbc:postgresql://localhost:5433/liftlog
     username: postgres
-    password: postgres
+    password: 263126
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,3 +18,15 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+
+springdoc:
+  show-actuator: false
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+  swagger-ui:
+    display-request-duration: true
+    operations-sorter: method
+
+logging:
+  level:
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG

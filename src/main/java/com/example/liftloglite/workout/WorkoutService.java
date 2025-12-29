@@ -1,9 +1,6 @@
 package com.example.liftloglite.workout;
 
-import com.example.liftloglite.common.exception.NotFoundException;
-import com.example.liftloglite.workout.dto.AddSetRequest;
-import com.example.liftloglite.workout.dto.CreateWorkoutRequest;
-import com.example.liftloglite.workout.dto.WorkoutResponse;
+import com.example.liftloglite.common.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,30 +13,37 @@ import java.util.stream.Collectors;
 public class WorkoutService {
 
     private final WorkoutJpaRepository workoutRepo;
+    private final WorkoutSetJpaRepository setRepo;
 
-    public WorkoutService(WorkoutJpaRepository workoutRepo) {
+    public WorkoutService(WorkoutJpaRepository workoutRepo,
+                          WorkoutSetJpaRepository setRepo) {
         this.workoutRepo = workoutRepo;
+        this.setRepo = setRepo;
     }
 
     @Transactional
-    public WorkoutResponse createWorkout(CreateWorkoutRequest request) {
+    public Workout createWorkout(Instant startedAt) {
         UUID id = UUID.randomUUID();
-        WorkoutEntity entity = new WorkoutEntity(id, request.getStartedAt(), null);
+        WorkoutEntity entity = new WorkoutEntity(id, startedAt, null);
         WorkoutEntity saved = workoutRepo.save(entity);
-        return WorkoutMapper.toResponse(toDomain(saved));
+        return toDomain(saved);
     }
 
     @Transactional(readOnly = true)
-    public List<WorkoutResponse> findAll() {
+    public org.springframework.data.domain.Page<Workout> findAll(org.springframework.data.domain.Pageable pageable) {
+        return workoutRepo.findAll(pageable).map(this::toDomain);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Workout> findAll() {
         return workoutRepo.findAll()
                 .stream()
                 .map(this::toDomain)
-                .map(WorkoutMapper::toResponse)
                 .toList();
     }
 
     @Transactional
-    public WorkoutResponse addSetToWorkout(UUID workoutId, AddSetRequest req) {
+    public Workout addSetToWorkout(UUID workoutId, AddSetRequest req) {
         WorkoutEntity workout = workoutRepo.findById(workoutId)
                 .orElseThrow(() -> new NotFoundException("Workout not found: " + workoutId));
 
@@ -58,7 +62,7 @@ public class WorkoutService {
         workout.addSet(setEntity);
 
         WorkoutEntity saved = workoutRepo.save(workout);
-        return WorkoutMapper.toResponse(toDomain(saved));
+        return toDomain(saved);
     }
 
     @Transactional
@@ -70,16 +74,17 @@ public class WorkoutService {
     }
 
     @Transactional
-    public WorkoutResponse finishWorkout(UUID id) {
+    public Workout finishWorkout(UUID id, Instant finishedAt) {
         WorkoutEntity workout = workoutRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Workout not found: " + id));
 
-        workout.setFinishedAt(Instant.now());
+        workout.setFinishedAt(finishedAt);
         WorkoutEntity saved = workoutRepo.save(workout);
-        return WorkoutMapper.toResponse(toDomain(saved));
+        return toDomain(saved);
     }
 
     // === mapping ===
+
     private Workout toDomain(WorkoutEntity entity) {
         var grouped = entity.getSets().stream()
                 .collect(Collectors.groupingBy(
